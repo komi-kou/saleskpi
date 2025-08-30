@@ -700,10 +700,12 @@ db.run(`CREATE TABLE IF NOT EXISTS weekly_reviews (
   FOREIGN KEY (user_id) REFERENCES users (id)
 )`);
 
-// Catch all handler for SPA
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
+// Catch all handler for SPA - must be last
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  } else {
+    next();
   }
 });
 
