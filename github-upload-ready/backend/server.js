@@ -31,6 +31,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Serve static files from the frontend build
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
 // Database setup is now handled in db-config.js
 console.log(`Using ${DB_TYPE} database`);
 
@@ -696,6 +699,13 @@ db.run(`CREATE TABLE IF NOT EXISTS weekly_reviews (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users (id)
 )`);
+
+// Catch all handler for SPA
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Enhanced KPI Server running on port ${PORT}`);
