@@ -1,0 +1,39 @@
+services:
+  # Frontend Service (Static Site)
+  - type: web
+    name: sales-kpi-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Backend Service (Node.js)
+  - type: web
+    name: sales-kpi-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sales-kpi-db
+          property: connectionString
+
+databases:
+  - name: sales-kpi-db
+    plan: free
+    databaseName: sales_kpi
+    user: sales_kpi_user

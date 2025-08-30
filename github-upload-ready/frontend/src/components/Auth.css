@@ -1,0 +1,140 @@
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.auth-form {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-form h2 {
+  margin: 0 0 10px 0;
+  color: #333;
+  text-align: center;
+}
+
+.auth-form h3 {
+  margin: 0 0 30px 0;
+  color: #666;
+  font-weight: normal;
+  text-align: center;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.auth-form button {
+  width: 100%;
+  padding: 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.auth-form button:hover {
+  background: #5a67d8;
+}
+
+.auth-form p {
+  text-align: center;
+  margin-top: 20px;
+  color: #666;
+}
+
+.auth-form a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.auth-form a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  background: #fee;
+  color: #c00;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 1px solid #fcc;
+}
+
+.success-message {
+  background: #00a86b;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 1px solid #008c59;
+  font-weight: 600;
+}
+
+.auth-form button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.auth-form button:disabled:hover {
+  background: #ccc;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.remember-me label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+}
+
+.remember-me input[type="checkbox"] {
+  width: auto;
+  margin: 0 8px 0 0;
+}
+
+.demo-info {
+  margin-top: 30px;
+  padding: 15px;
+  background: #f0f8ff;
+  border-radius: 8px;
+  border: 1px solid #b8d4f1;
+}
+
+.demo-info .demo-title {
+  font-weight: bold;
+  color: #4a90e2;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.demo-info p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #555;
+  font-family: 'Courier New', monospace;
+}
