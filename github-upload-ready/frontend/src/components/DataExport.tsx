@@ -121,25 +121,15 @@ const DataExport: React.FC = () => {
           csvContent += '\n';
         }
         
-        // ダウンロード処理
-        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+        // ダウンロード処理（data: URL方式に変更）
+        const url = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + csvContent);
         const link = document.createElement('a');
         link.href = url;
         link.download = `kpi_export_${startDate}_${endDate}.csv`;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        
-        // setTimeoutで確実にクリックイベントを発火
-        setTimeout(() => {
-          link.click();
-          
-          // クリーンアップ処理
-          setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }, 100);
-        }, 0);
+        link.click();
+      } else {
+        // データが0件の場合の処理
+        alert('エクスポートするデータがありません。期間を確認してください。');
       }
     } catch (error) {
       console.error('Export failed:', error);
@@ -160,25 +150,13 @@ const DataExport: React.FC = () => {
       
       const data = await response.json();
       
-      // JSONダウンロード処理
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+      // JSONダウンロード処理（data: URL方式に変更）
+      const jsonString = JSON.stringify(data, null, 2);
+      const url = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString);
       const link = document.createElement('a');
       link.href = url;
       link.download = `kpi_export_${startDate}_${endDate}.json`;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      
-      // setTimeoutで確実にクリックイベントを発火
-      setTimeout(() => {
-        link.click();
-        
-        // クリーンアップ処理
-        setTimeout(() => {
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }, 100);
-      }, 0);
+      link.click();
     } catch (error) {
       console.error('Export failed:', error);
       alert('エクスポートに失敗しました');
