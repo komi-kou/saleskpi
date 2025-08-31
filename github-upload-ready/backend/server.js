@@ -316,7 +316,7 @@ cron.schedule('0 18 * * *', () => {
 
 // Weekly summary on Friday at 5 PM
 cron.schedule('0 17 * * 5', () => {
-  sendDiscordNotification('📈 週次レビューの時間です！今週の振り返りを行いましょう。\nhttps://your-app-url.com/weekly-review');
+  sendDiscordNotification('📈 週次レビューの時間です！データをダウンロードしてAKIトークでFBしてもらいましょう。\nhttps://saleskpi-kq8f.onrender.com/export');
 });
 
 // Daily automatic backup at midnight
