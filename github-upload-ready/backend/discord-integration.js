@@ -171,6 +171,66 @@ class DiscordNotifier {
       return false;
     }
   }
+
+  // 営業文変更通知
+  async sendSalesTemplateChangeNotification(type, totalCount) {
+    if (!this.webhookUrl) return;
+
+    const isManual = type === 'manual';
+    const threshold = isManual ? 200 : 500;
+    const cycleNumber = Math.floor(totalCount / threshold);
+    
+    const embed = {
+      embeds: [{
+        title: "🔄 営業文変更のお知らせ",
+        color: 0xff9900,
+        description: isManual 
+          ? `手動営業が${totalCount}件に到達しました！\n営業文の見直し・改善をおすすめします。`
+          : `外注営業が${totalCount}件に到達しました！\n営業文の見直し・改善をおすすめします。`,
+        fields: [
+          {
+            name: "📧 送信タイプ",
+            value: isManual ? "手動営業" : "外注営業",
+            inline: true
+          },
+          {
+            name: "📊 累計送信数",
+            value: `${totalCount}件`,
+            inline: true
+          },
+          {
+            name: "🔢 サイクル数",
+            value: `第${cycleNumber}サイクル`,
+            inline: true
+          },
+          {
+            name: "💡 推奨アクション",
+            value: "• 現在の営業文の成果を分析\n• 返信率を確認\n• A/Bテストの実施\n• 新しい訴求ポイントの検討",
+            inline: false
+          },
+          {
+            name: "📝 チェックポイント",
+            value: isManual 
+              ? "• 件名の最適化\n• パーソナライゼーション要素の追加\n• CTAの明確化"
+              : "• ターゲティングの見直し\n• 配信時間の最適化\n• テンプレートの多様化",
+            inline: false
+          }
+        ],
+        timestamp: new Date().toISOString(),
+        footer: {
+          text: `次回通知: ${totalCount + threshold}件到達時`
+        }
+      }]
+    };
+
+    try {
+      await axios.post(this.webhookUrl, embed);
+      return true;
+    } catch (error) {
+      console.error('Discord notification failed:', error);
+      return false;
+    }
+  }
 }
 
 // GPTs連携機能
