@@ -102,53 +102,6 @@ const WeeklyReviewV2: React.FC = () => {
     <div className="weekly-review-v2">
       <h2>週次レビュー＆分析</h2>
       
-      {/* AKIトークへの誘導メッセージ */}
-      <div className="aki-talk-prompt" style={{
-        backgroundColor: '#f0f8ff',
-        border: '2px solid #1e90ff',
-        borderRadius: '10px',
-        padding: '20px',
-        marginBottom: '30px',
-        textAlign: 'center'
-      }}>
-        <h3 style={{ color: '#1e90ff', marginBottom: '10px' }}>📊 データ分析はAKIトークで！</h3>
-        <p style={{ fontSize: '16px', marginBottom: '15px' }}>
-          週次のデータをダウンロードしてAKIトークで現状の課題と今後の動きを明確にしましょう。
-        </p>
-        <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-          <a 
-            href="https://chatgpt.com/g/g-678de795d084819181eb6ca97cbcac1b-akitoku" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            style={{
-              backgroundColor: '#1e90ff',
-              color: 'white',
-              padding: '10px 20px',
-              borderRadius: '5px',
-              textDecoration: 'none',
-              fontWeight: 'bold',
-              display: 'inline-block'
-            }}
-          >
-            🔗 AKIトークを開く
-          </a>
-          <a 
-            href="/export" 
-            style={{
-              backgroundColor: '#28a745',
-              color: 'white',
-              padding: '10px 20px',
-              borderRadius: '5px',
-              textDecoration: 'none',
-              fontWeight: 'bold',
-              display: 'inline-block'
-            }}
-          >
-            📥 データをエクスポート
-          </a>
-        </div>
-      </div>
-      
       <div className="week-navigation">
         <button onClick={() => navigateWeek('prev')} className="nav-btn">
           ← 前週
