@@ -186,9 +186,40 @@ app.get('/api/kpi-goals/current', authenticateToken, (req, res) => {
 });
 
 // Enhanced Daily KPI routes
-app.post('/api/daily-kpi', authenticateToken, (req, res) => {
+app.post('/api/daily-kpi', authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const kpi = req.body;
+  
+  // 累計送信数をチェックするための処理
+  const checkCumulativeEmails = () => {
+    return new Promise((resolve) => {
+      // 現在の月の最初の日を取得
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthStartStr = monthStart.toISOString().split('T')[0];
+      
+      db.all(
+        `SELECT 
+          SUM(emails_sent_manual) as total_manual,
+          SUM(emails_sent_outsource) as total_outsource
+         FROM daily_kpi 
+         WHERE user_id = ? AND date >= ?`,
+        [userId, monthStartStr],
+        (err, rows) => {
+          if (err) {
+            console.error('Error fetching cumulative emails:', err);
+            resolve({ total_manual: 0, total_outsource: 0 });
+          } else {
+            const result = rows[0] || { total_manual: 0, total_outsource: 0 };
+            // 今回の入力分を加算
+            result.total_manual = (result.total_manual || 0) + (parseInt(kpi.emails_sent_manual) || 0);
+            result.total_outsource = (result.total_outsource || 0) + (parseInt(kpi.emails_sent_outsource) || 0);
+            resolve(result);
+          }
+        }
+      );
+    });
+  };
   
   db.run(
     `INSERT OR REPLACE INTO daily_kpi (
@@ -207,13 +238,27 @@ app.post('/api/daily-kpi', authenticateToken, (req, res) => {
       kpi.projects_created || 0, kpi.ongoing_projects || 0,
       kpi.slide_views || 0, kpi.video_views || 0, kpi.notes || ''
     ],
-    function(err) {
+    async function(err) {
       if (err) {
         console.error('Daily KPI save error:', err);
         return res.status(500).json({ error: 'Failed to save daily KPI' });
       }
+      
       // Discord通知を送信
       discordNotifier.sendDailyKPINotification(userId, kpi);
+      
+      // 累計送信数をチェックして営業文変更通知を送信
+      const cumulative = await checkCumulativeEmails();
+      
+      // 手動営業文変更通知（200件ごと）
+      if (cumulative.total_manual >= 200 && cumulative.total_manual % 200 < (parseInt(kpi.emails_sent_manual) || 0)) {
+        discordNotifier.sendSalesTemplateChangeNotification('manual', cumulative.total_manual);
+      }
+      
+      // 外注営業文変更通知（500件ごと）
+      if (cumulative.total_outsource >= 500 && cumulative.total_outsource % 500 < (parseInt(kpi.emails_sent_outsource) || 0)) {
+        discordNotifier.sendSalesTemplateChangeNotification('outsource', cumulative.total_outsource);
+      }
       
       res.json({ message: 'Daily KPI saved successfully' });
     }
@@ -301,12 +346,16 @@ app.get('/api/weekly-summary/:weekStart', authenticateToken, (req, res) => {
 
 // Discord notification function
 const sendDiscordNotification = async (message) => {
-  if (!DISCORD_WEBHOOK_URL) return;
+  // ユーザー設定のWebhookを優先、なければ環境変数を使用
+  const webhookUrl = 'https://discord.com/api/webhooks/1409166071553986692/dsZZ1gvKUFIDbMHX5nv8xGGxcKyxN7_V1Hn5Jpf44YydlmJ6-qLBvzL8IyvTqnrvfvHd' || DISCORD_WEBHOOK_URL;
+  
+  if (!webhookUrl) return;
   
   try {
-    await axios.post(DISCORD_WEBHOOK_URL, {
+    await axios.post(webhookUrl, {
       content: message
     });
+    console.log('Discord notification sent successfully');
   } catch (error) {
     console.error('Failed to send Discord notification:', error);
   }
@@ -319,7 +368,7 @@ cron.schedule('0 18 * * *', () => {
 
 // Weekly summary on Friday at 5 PM
 cron.schedule('0 17 * * 5', () => {
-  sendDiscordNotification('📈 週次レビューの時間です！データをダウンロードしてAKIトークでFBしてもらいましょう。\nhttps://saleskpi-kq8f.onrender.com/export');
+  sendDiscordNotification('📈 週次レビューの時間です！\n\n週次のデータをダウンロードしてAKIトークで現状の課題と今後の動きを明確にしましょう。\n\n🔗 AKIトーク: https://chatgpt.com/g/g-678de795d084819181eb6ca97cbcac1b-akitoku\n📊 データエクスポート: https://saleskpi-kq8f.onrender.com/export');
 });
 
 // Daily automatic backup at midnight

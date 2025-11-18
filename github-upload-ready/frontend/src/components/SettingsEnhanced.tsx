@@ -226,11 +226,11 @@ const SettingsEnhanced: React.FC = () => {
           
           <div className="card-content">
             <div className="checkbox-group">
-              <label className="checkbox-label">
+              <label className="checkbox-label disabled">
                 <input
                   type="checkbox"
-                  checked={settings.dailyReminders}
-                  onChange={(e) => handleChange('dailyReminders', e.target.checked)}
+                  checked={true}
+                  disabled
                   className="checkbox-input"
                 />
                 <span className="checkbox-custom"></span>
@@ -242,11 +242,11 @@ const SettingsEnhanced: React.FC = () => {
             </div>
 
             <div className="checkbox-group">
-              <label className="checkbox-label">
+              <label className="checkbox-label disabled">
                 <input
                   type="checkbox"
-                  checked={settings.weeklyReminders}
-                  onChange={(e) => handleChange('weeklyReminders', e.target.checked)}
+                  checked={true}
+                  disabled
                   className="checkbox-input"
                 />
                 <span className="checkbox-custom"></span>
@@ -258,11 +258,11 @@ const SettingsEnhanced: React.FC = () => {
             </div>
 
             <div className="checkbox-group">
-              <label className="checkbox-label">
+              <label className="checkbox-label disabled">
                 <input
                   type="checkbox"
-                  checked={settings.emailNotifications}
-                  onChange={(e) => handleChange('emailNotifications', e.target.checked)}
+                  checked={true}
+                  disabled
                   className="checkbox-input"
                 />
                 <span className="checkbox-custom"></span>
@@ -274,13 +274,10 @@ const SettingsEnhanced: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">リマインダー時刻</label>
-              <input
-                type="time"
-                value={settings.reminderTime}
-                onChange={(e) => handleChange('reminderTime', e.target.value)}
-                className="form-input time-input"
-              />
+              <label className="form-label">リマインダー時刻（固定）</label>
+              <div className="help-text">
+                日次入力: 毎日 18:00 / 週次レビュー: 金曜 17:00
+              </div>
             </div>
           </div>
         </div>

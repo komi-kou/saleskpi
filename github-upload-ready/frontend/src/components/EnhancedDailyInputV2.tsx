@@ -163,7 +163,7 @@ const EnhancedDailyInputV2: React.FC = () => {
 
   return (
     <div className="enhanced-daily-input">
-      <h2>営業KPI日次入力（詳細版）</h2>
+      <h2>営業KPI日次入力</h2>
       
       <div className="date-selector">
         <label>

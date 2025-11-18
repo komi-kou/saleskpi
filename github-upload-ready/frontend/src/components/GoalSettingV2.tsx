@@ -23,26 +23,6 @@ interface KPIGoals {
   video_view_rate_target: string;
 }
 
-// 推奨値とヒント
-const RECOMMENDATIONS = {
-  emails_manual_target: { value: 150, hint: '1日30件×5日の計算' },
-  emails_outsource_target: { value: 2250, hint: '外注による大量送信' },
-  valid_emails_manual_target: { value: 150, hint: '到達率100%を目指す' },
-  valid_emails_outsource_target: { value: 1350, hint: '到達率60%程度' },
-  reply_target: { value: 22, hint: '有効送信の1.5%程度' },
-  reply_rate_target: { value: 1.5, hint: '業界平均1-2%' },
-  meetings_target: { value: 8, hint: '返信の35%程度' },
-  meeting_rate_target: { value: 36, hint: '返信からの転換率' },
-  deals_target: { value: 6, hint: '面談の75%程度' },
-  deal_rate_target: { value: 75, hint: '面談からの成約率' },
-  projects_target: { value: 2, hint: '成約の30%程度' },
-  project_rate_target: { value: 25, hint: '成約からの案件化率' },
-  ongoing_projects_target: { value: 2, hint: '継続的な案件数' },
-  slide_views_target: { value: 25, hint: '有効送信の1.5%程度' },
-  slide_view_rate_target: { value: 15, hint: 'エンゲージメント指標' },
-  video_views_target: { value: 25, hint: '有効送信の1.5%程度' },
-  video_view_rate_target: { value: 15, hint: 'エンゲージメント指標' },
-};
 
 const GoalSettingV2: React.FC = () => {
   const [weekStart, setWeekStart] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'));
@@ -151,20 +131,72 @@ const GoalSettingV2: React.FC = () => {
   const handleChange = (field: keyof KPIGoals, value: string) => {
     // 数値のみ許可（小数点も含む）
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setGoals(prev => ({
-        ...prev,
-        [field]: value
-      }));
+      setGoals(prev => {
+        const newGoals = {
+          ...prev,
+          [field]: value
+        };
+        
+        // 率を自動計算
+        const validEmailsTotal = parseFloat(newGoals.valid_emails_manual_target || '0') + 
+                                parseFloat(newGoals.valid_emails_outsource_target || '0');
+        
+        // 返信率の自動計算
+        if ((field === 'reply_target' || field === 'valid_emails_manual_target' || field === 'valid_emails_outsource_target') && validEmailsTotal > 0) {
+          const replyTarget = parseFloat(newGoals.reply_target || '0');
+          if (replyTarget > 0) {
+            newGoals.reply_rate_target = ((replyTarget / validEmailsTotal) * 100).toFixed(2);
+          }
+        }
+        
+        // 面談率の自動計算（返信数に対する面談数の割合）
+        if ((field === 'meetings_target' || field === 'reply_target') && parseFloat(newGoals.reply_target || '0') > 0) {
+          const meetingsTarget = parseFloat(newGoals.meetings_target || '0');
+          const replyTarget = parseFloat(newGoals.reply_target || '0');
+          if (meetingsTarget > 0 && replyTarget > 0) {
+            newGoals.meeting_rate_target = ((meetingsTarget / replyTarget) * 100).toFixed(2);
+          }
+        }
+        
+        // 成約率の自動計算（面談数に対する成約数の割合）
+        if ((field === 'deals_target' || field === 'meetings_target') && parseFloat(newGoals.meetings_target || '0') > 0) {
+          const dealsTarget = parseFloat(newGoals.deals_target || '0');
+          const meetingsTarget = parseFloat(newGoals.meetings_target || '0');
+          if (dealsTarget > 0 && meetingsTarget > 0) {
+            newGoals.deal_rate_target = ((dealsTarget / meetingsTarget) * 100).toFixed(2);
+          }
+        }
+        
+        // 案件化率の自動計算（成約数に対する案件数の割合）
+        if ((field === 'projects_target' || field === 'deals_target') && parseFloat(newGoals.deals_target || '0') > 0) {
+          const projectsTarget = parseFloat(newGoals.projects_target || '0');
+          const dealsTarget = parseFloat(newGoals.deals_target || '0');
+          if (projectsTarget > 0 && dealsTarget > 0) {
+            newGoals.project_rate_target = ((projectsTarget / dealsTarget) * 100).toFixed(2);
+          }
+        }
+        
+        // スライド視聴率の自動計算
+        if ((field === 'slide_views_target' || field === 'valid_emails_manual_target' || field === 'valid_emails_outsource_target') && validEmailsTotal > 0) {
+          const slideViewsTarget = parseFloat(newGoals.slide_views_target || '0');
+          if (slideViewsTarget > 0) {
+            newGoals.slide_view_rate_target = ((slideViewsTarget / validEmailsTotal) * 100).toFixed(2);
+          }
+        }
+        
+        // 動画視聴率の自動計算
+        if ((field === 'video_views_target' || field === 'valid_emails_manual_target' || field === 'valid_emails_outsource_target') && validEmailsTotal > 0) {
+          const videoViewsTarget = parseFloat(newGoals.video_views_target || '0');
+          if (videoViewsTarget > 0) {
+            newGoals.video_view_rate_target = ((videoViewsTarget / validEmailsTotal) * 100).toFixed(2);
+          }
+        }
+        
+        return newGoals;
+      });
     }
   };
 
-  const applyRecommendations = () => {
-    const recommendedGoals: KPIGoals = {} as KPIGoals;
-    Object.keys(RECOMMENDATIONS).forEach(key => {
-      recommendedGoals[key as keyof KPIGoals] = RECOMMENDATIONS[key as keyof typeof RECOMMENDATIONS].value.toString();
-    });
-    setGoals(recommendedGoals);
-  };
 
   const clearAll = () => {
     const emptyGoals: KPIGoals = {} as KPIGoals;
@@ -225,9 +257,6 @@ const GoalSettingV2: React.FC = () => {
           />
         </label>
         <div className="quick-actions">
-          <button type="button" onClick={applyRecommendations} className="btn-recommend">
-            推奨値を適用
-          </button>
           <button type="button" onClick={copyFromPreviousWeek} className="btn-copy">
             前週からコピー
           </button>
@@ -252,7 +281,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('emails_manual_target', e.target.value)}
                     placeholder="例: 150"
                   />
-                  <span className="hint">{RECOMMENDATIONS.emails_manual_target.hint}</span>
+                  <span className="hint">1日の送信目標数を入力</span>
                 </label>
               </div>
               <div className="input-group">
@@ -264,7 +293,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('emails_outsource_target', e.target.value)}
                     placeholder="例: 2250"
                   />
-                  <span className="hint">{RECOMMENDATIONS.emails_outsource_target.hint}</span>
+                  <span className="hint">外注による送信目標数を入力</span>
                 </label>
               </div>
               <div className="input-group">
@@ -276,7 +305,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('valid_emails_manual_target', e.target.value)}
                     placeholder="例: 150"
                   />
-                  <span className="hint">{RECOMMENDATIONS.valid_emails_manual_target.hint}</span>
+                  <span className="hint">到達した有効メール数の目標</span>
                 </label>
               </div>
               <div className="input-group">
@@ -288,7 +317,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('valid_emails_outsource_target', e.target.value)}
                     placeholder="例: 1350"
                   />
-                  <span className="hint">{RECOMMENDATIONS.valid_emails_outsource_target.hint}</span>
+                  <span className="hint">外注の有効メール数の目標</span>
                 </label>
               </div>
             </div>
@@ -307,7 +336,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('reply_target', e.target.value)}
                     placeholder="例: 22"
                   />
-                  <span className="hint">{RECOMMENDATIONS.reply_target.hint}</span>
+                  <span className="hint">返信獲得の目標数</span>
                 </label>
               </div>
               <div className="input-group">
@@ -317,9 +346,10 @@ const GoalSettingV2: React.FC = () => {
                     type="text"
                     value={goals.reply_rate_target}
                     onChange={(e) => handleChange('reply_rate_target', e.target.value)}
-                    placeholder="例: 1.5"
+                    placeholder="自動計算されます"
+                    style={{ backgroundColor: '#f0f0f0' }}
                   />
-                  <span className="hint">{RECOMMENDATIONS.reply_rate_target.hint}</span>
+                  <span className="hint">自動計算: 返信数÷有効送信数×100</span>
                 </label>
               </div>
               <div className="input-group">
@@ -331,7 +361,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('meetings_target', e.target.value)}
                     placeholder="例: 8"
                   />
-                  <span className="hint">{RECOMMENDATIONS.meetings_target.hint}</span>
+                  <span className="hint">面談設定の目標数</span>
                 </label>
               </div>
               <div className="input-group">
@@ -341,9 +371,10 @@ const GoalSettingV2: React.FC = () => {
                     type="text"
                     value={goals.meeting_rate_target}
                     onChange={(e) => handleChange('meeting_rate_target', e.target.value)}
-                    placeholder="例: 36"
+                    placeholder="自動計算されます"
+                    style={{ backgroundColor: '#f0f0f0' }}
                   />
-                  <span className="hint">{RECOMMENDATIONS.meeting_rate_target.hint}</span>
+                  <span className="hint">自動計算: 面談数÷返信数×100</span>
                 </label>
               </div>
             </div>
@@ -362,7 +393,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('deals_target', e.target.value)}
                     placeholder="例: 6"
                   />
-                  <span className="hint">{RECOMMENDATIONS.deals_target.hint}</span>
+                  <span className="hint">成約の目標数</span>
                 </label>
               </div>
               <div className="input-group">
@@ -372,9 +403,10 @@ const GoalSettingV2: React.FC = () => {
                     type="text"
                     value={goals.deal_rate_target}
                     onChange={(e) => handleChange('deal_rate_target', e.target.value)}
-                    placeholder="例: 75"
+                    placeholder="自動計算されます"
+                    style={{ backgroundColor: '#f0f0f0' }}
                   />
-                  <span className="hint">{RECOMMENDATIONS.deal_rate_target.hint}</span>
+                  <span className="hint">自動計算: 成約数÷面談数×100</span>
                 </label>
               </div>
               <div className="input-group">
@@ -386,7 +418,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('projects_target', e.target.value)}
                     placeholder="例: 2"
                   />
-                  <span className="hint">{RECOMMENDATIONS.projects_target.hint}</span>
+                  <span className="hint">案件化の目標数</span>
                 </label>
               </div>
               <div className="input-group">
@@ -396,9 +428,10 @@ const GoalSettingV2: React.FC = () => {
                     type="text"
                     value={goals.project_rate_target}
                     onChange={(e) => handleChange('project_rate_target', e.target.value)}
-                    placeholder="例: 25"
+                    placeholder="自動計算されます"
+                    style={{ backgroundColor: '#f0f0f0' }}
                   />
-                  <span className="hint">{RECOMMENDATIONS.project_rate_target.hint}</span>
+                  <span className="hint">自動計算: 案件数÷成約数×100</span>
                 </label>
               </div>
               <div className="input-group">
@@ -410,7 +443,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('ongoing_projects_target', e.target.value)}
                     placeholder="例: 2"
                   />
-                  <span className="hint">{RECOMMENDATIONS.ongoing_projects_target.hint}</span>
+                  <span className="hint">継続案件の目標数</span>
                 </label>
               </div>
             </div>
@@ -429,7 +462,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('slide_views_target', e.target.value)}
                     placeholder="例: 25"
                   />
-                  <span className="hint">{RECOMMENDATIONS.slide_views_target.hint}</span>
+                  <span className="hint">スライド閲覧の目標数</span>
                 </label>
               </div>
               <div className="input-group">
@@ -439,9 +472,10 @@ const GoalSettingV2: React.FC = () => {
                     type="text"
                     value={goals.slide_view_rate_target}
                     onChange={(e) => handleChange('slide_view_rate_target', e.target.value)}
-                    placeholder="例: 15"
+                    placeholder="自動計算されます"
+                    style={{ backgroundColor: '#f0f0f0' }}
                   />
-                  <span className="hint">{RECOMMENDATIONS.slide_view_rate_target.hint}</span>
+                  <span className="hint">自動計算: スライド視聴数÷有効送信数×100</span>
                 </label>
               </div>
               <div className="input-group">
@@ -453,7 +487,7 @@ const GoalSettingV2: React.FC = () => {
                     onChange={(e) => handleChange('video_views_target', e.target.value)}
                     placeholder="例: 25"
                   />
-                  <span className="hint">{RECOMMENDATIONS.video_views_target.hint}</span>
+                  <span className="hint">動画視聴の目標数</span>
                 </label>
               </div>
               <div className="input-group">
@@ -463,9 +497,10 @@ const GoalSettingV2: React.FC = () => {
                     type="text"
                     value={goals.video_view_rate_target}
                     onChange={(e) => handleChange('video_view_rate_target', e.target.value)}
-                    placeholder="例: 15"
+                    placeholder="自動計算されます"
+                    style={{ backgroundColor: '#f0f0f0' }}
                   />
-                  <span className="hint">{RECOMMENDATIONS.video_view_rate_target.hint}</span>
+                  <span className="hint">自動計算: 動画視聴数÷有効送信数×100</span>
                 </label>
               </div>
             </div>
