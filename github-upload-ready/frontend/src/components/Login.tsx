@@ -95,11 +95,6 @@ const Login: React.FC = () => {
           アカウントをお持ちでない方は{' '}
           <Link to="/register">新規登録</Link>
         </p>
-        <div className="demo-info">
-          <p className="demo-title">🔑 デモアカウント</p>
-          <p>Email: demo@example.com</p>
-          <p>Password: demo123</p>
-        </div>
       </form>
     </div>
   );

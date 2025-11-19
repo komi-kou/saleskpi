@@ -68,6 +68,7 @@ const DashboardV4: React.FC = () => {
       
       if (progressResponse.ok) {
         const progressData = await progressResponse.json();
+        console.log('Goal Progress Data:', progressData);
         setGoalProgress(progressData);
       }
       
@@ -103,8 +104,14 @@ const DashboardV4: React.FC = () => {
       icon: '📧',
       actual: goalProgress.actuals.emails_manual + goalProgress.actuals.emails_outsource,
       target: (goalProgress.goals.emails_manual_target || 0) + (goalProgress.goals.emails_outsource_target || 0),
-      progress: Math.round((goalProgress.actuals.emails_manual + goalProgress.actuals.emails_outsource) / 
-                ((goalProgress.goals.emails_manual_target || 1) + (goalProgress.goals.emails_outsource_target || 1)) * 100),
+      progress: (() => {
+        const totalTarget = (goalProgress.goals.emails_manual_target || 0) + (goalProgress.goals.emails_outsource_target || 0);
+        const totalActual = (goalProgress.actuals.emails_manual || 0) + (goalProgress.actuals.emails_outsource || 0);
+        if (totalTarget > 0) {
+          return Math.round((totalActual / totalTarget) * 100);
+        }
+        return 0;
+      })(),
       color: '#6366f1',
       gradient: 'gradient1'
     },
@@ -114,7 +121,14 @@ const DashboardV4: React.FC = () => {
       icon: '💬',
       actual: goalProgress.actuals.replies,
       target: goalProgress.goals.reply_target || 0,
-      progress: Math.round((goalProgress.actuals.replies / (goalProgress.goals.reply_target || 1)) * 100),
+      progress: (() => {
+        const target = goalProgress.goals.reply_target || 0;
+        const actual = goalProgress.actuals.replies || 0;
+        if (target > 0) {
+          return Math.round((actual / target) * 100);
+        }
+        return 0;
+      })(),
       color: '#10b981',
       gradient: 'gradient2'
     },
@@ -124,7 +138,14 @@ const DashboardV4: React.FC = () => {
       icon: '🤝',
       actual: goalProgress.actuals.meetings,
       target: goalProgress.goals.meetings_target || 0,
-      progress: Math.round((goalProgress.actuals.meetings / (goalProgress.goals.meetings_target || 1)) * 100),
+      progress: (() => {
+        const target = goalProgress.goals.meetings_target || 0;
+        const actual = goalProgress.actuals.meetings || 0;
+        if (target > 0) {
+          return Math.round((actual / target) * 100);
+        }
+        return 0;
+      })(),
       color: '#f59e0b',
       gradient: 'gradient3'
     },
@@ -134,7 +155,14 @@ const DashboardV4: React.FC = () => {
       icon: '🎯',
       actual: goalProgress.actuals.deals,
       target: goalProgress.goals.deals_target || 0,
-      progress: Math.round((goalProgress.actuals.deals / (goalProgress.goals.deals_target || 1)) * 100),
+      progress: (() => {
+        const target = goalProgress.goals.deals_target || 0;
+        const actual = goalProgress.actuals.deals || 0;
+        if (target > 0) {
+          return Math.round((actual / target) * 100);
+        }
+        return 0;
+      })(),
       color: '#ef4444',
       gradient: 'gradient4'
     }
@@ -147,14 +175,43 @@ const DashboardV4: React.FC = () => {
     target: 100
   }));
 
-  // 週間パフォーマンストレンド（返信を追加）
-  const weeklyTrend = dailyData.map(day => ({
-    date: new Date(day.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }),
-    emails: day.emails || 0,
-    replies: Math.floor(day.emails * 0.15) || 0, // 返信データを推定
-    meetings: day.meetings || 0,
-    deals: day.deals || 0
-  }));
+  // 週間パフォーマンストレンド（累積表示）
+  let cumulativeData = {
+    emails: 0,
+    replies: 0,
+    meetings: 0,
+    deals: 0,
+    projects: 0
+  };
+  
+  // 日付順にソート（古い順）してから累積計算
+  const sortedDailyData = [...dailyData].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  const weeklyTrend = sortedDailyData.map(day => {
+    // 累積値を計算
+    cumulativeData.emails += day.emails || 0;
+    cumulativeData.replies += day.replies || 0;
+    cumulativeData.meetings += day.meetings || 0;
+    cumulativeData.deals += day.deals || 0;
+    cumulativeData.projects += day.projects || 0;
+    
+    return {
+      date: new Date(day.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }),
+      emails: cumulativeData.emails,
+      replies: cumulativeData.replies,
+      meetings: cumulativeData.meetings,
+      deals: cumulativeData.deals,
+      projects: cumulativeData.projects,
+      // 日別の値も保持（ツールチップ用）
+      dailyEmails: day.emails || 0,
+      dailyReplies: day.replies || 0,
+      dailyMeetings: day.meetings || 0,
+      dailyDeals: day.deals || 0,
+      dailyProjects: day.projects || 0
+    };
+  });
 
   // パイチャートデータ（達成/未達成の割合）
   const achievementPieData = kpiMetrics.map(kpi => ({
@@ -163,9 +220,10 @@ const DashboardV4: React.FC = () => {
     percentage: kpi.progress
   }));
 
-  // 総合達成率
-  const overallProgress = kpiMetrics.length > 0
-    ? Math.round(kpiMetrics.reduce((sum, kpi) => sum + kpi.progress, 0) / kpiMetrics.length)
+  // 総合達成率（目標が設定されている項目のみで計算）
+  const validMetrics = kpiMetrics.filter(kpi => kpi.target > 0);
+  const overallProgress = validMetrics.length > 0
+    ? Math.round(validMetrics.reduce((sum, kpi) => sum + kpi.progress, 0) / validMetrics.length)
     : 0;
 
   const getStatusColor = (progress: number) => {
